@@ -1,0 +1,18 @@
+{
+  "name": "Dublin, Decoded — Walking Story",
+  "short_name": "Dublin Decoded",
+  "description": "GPS-triggered fun facts along a walking tour of Dublin.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f4ec",
+  "theme_color": "#092219",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

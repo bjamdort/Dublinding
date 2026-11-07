@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#092219">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Follow eight Dublin landmarks and discover a surprising story at each stop. Live map, GPS-triggered facts, and walking directions.">
+  <title>Dublin, Decoded — Your Walking Story</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root{--pine:#092219;--pine2:#103628;--bright:#b6ef77;--mint:#d7efc1;--white:#fffdf6;--ink:#182a25;--muted:#76847c;--border:#dfe6d9;--cream:#f5f4ec;--shadow:0 18px 46px rgba(10,28,19,.18)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+    button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}a{color:inherit}button:focus-visible,a:focus-visible{outline:3px solid #fa8c50;outline-offset:3px}
+    .shell{min-height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr)}
+    .topbar{background:var(--pine);color:var(--white);padding:16px clamp(16px,2.5vw,36px);display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #224235}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}.brand-icon{height:40px;width:40px;border-radius:14px;background:var(--bright);color:var(--pine);display:grid;place-items:center;flex-shrink:0;font-weight:900;font-size:23px;transform:rotate(-6deg)}
+    .brand-name{font-size:17px;line-height:1.1;font-weight:850;letter-spacing:-.55px}.brand-sub{font-size:11px;opacity:.7;margin-top:4px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+    .location-label{display:flex;align-items:center;gap:7px;border:1px solid #416054;background:#173d2e;border-radius:999px;padding:9px 12px;font-size:12px;color:#d8f2e0;font-weight:700;white-space:nowrap}.status-dot{height:7px;width:7px;background:#a2bbaf;border-radius:100%;box-shadow:0 0 0 3px #ffffff13}.status-dot.live{background:var(--bright);box-shadow:0 0 0 3px #cafa6e29}
+    .layout{display:grid;grid-template-columns:minmax(350px,430px) minmax(0,1fr);min-height:0;height:calc(100dvh - 73px)}
+    .sidebar{background:var(--cream);overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+    .story-intro{padding:28px 28px 20px}.eyebrow{display:flex;gap:8px;align-items:center;text-transform:uppercase;letter-spacing:.14em;font-weight:800;color:#527357;font-size:11px;margin-bottom:10px}
+    .story-intro h1{font-size:clamp(29px,3vw,38px);line-height:1.07;letter-spacing:-1.35px;margin:0 0 12px;color:#112a21;max-width:360px}.story-intro h1 em{font-style:normal;color:#478d54}.intro-copy{font-size:13px;line-height:1.65;color:#57655e;margin:0}
+    .stats{display:flex;gap:12px;margin-top:19px;flex-wrap:wrap}.pill{border:1px solid var(--border);border-radius:999px;padding:8px 10px;background:#fff;font-size:11px;font-weight:780;color:#395045;display:flex;gap:6px;align-items:center}.pill svg{width:14px;height:14px}
+    .progress-card{margin:0 20px 20px;padding:17px 17px 15px;border-radius:17px;background:#e8ede1;border:1px solid #dee5d7}.progress-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.progress-head b{font-size:13px}.progress-head small{font-size:11px;color:#526a54}.progress-track{height:7px;border-radius:99px;background:#cad8bf;margin:10px 0 0;overflow:hidden}.progress-fill{width:0;height:100%;border-radius:99px;background:#3b9455;transition:width .25s}
+    .button-panel{padding:0 20px 14px;display:grid;grid-template-columns:1fr 1fr;gap:9px}.primary,.outline,.soft,.white-button{border:0;border-radius:13px;font-size:13px;font-weight:800;min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:11px 13px;text-decoration:none;transition:transform .2s,background .2s}.primary:active,.outline:active,.soft:active{transform:scale(.98)}.primary{background:#143e2d;color:#f6ffec}.primary:hover{background:#256a40}.outline{background:white;color:#214936;border:1px solid #cadaaf}.soft{background:#e2edd5;color:#21432e}.white-button{background:#fff;color:#123e2b}
+    .full{grid-column:span 2}.gps-help{padding:0 27px 16px;font-size:11px;line-height:1.5;color:#778179;min-height:38px}
+    .section-heading{display:flex;align-items:baseline;justify-content:space-between;padding:10px 25px 10px;gap:10px}.section-heading h2{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#3e5446}.section-heading button{background:none;border:0;font-size:11px;color:#688478;text-decoration:underline;padding:3px}
+    .stops{padding:0 16px 25px;display:flex;flex-direction:column;gap:7px}.stop{width:100%;display:flex;align-items:center;gap:12px;background:transparent;border:1px solid transparent;border-radius:14px;padding:10px;text-align:left;transition:background .2s,border .2s}.stop:hover{background:#fff}.stop.next{background:#fff;border-color:#c6dac5;box-shadow:0 5px 20px #234a2710}.stop-num{width:37px;height:37px;border:2px solid #c6d1c3;background:white;color:#566d5c;border-radius:12px;display:grid;place-items:center;font-size:13px;font-weight:900;flex-shrink:0}.stop.next .stop-num{background:var(--pine);color:var(--bright);border-color:var(--pine)}.stop.visited .stop-num{background:#d7edca;color:#2f7950;border-color:#b5d6a7}.stop-text{min-width:0;flex:1}.stop-title{display:block;font-size:13px;font-weight:800;letter-spacing:-.15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stop-subtitle{display:block;font-size:11px;color:#7a857c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}.stop-arrow{color:#7f9688;font-size:17px;padding:2px 1px}.stop.next .stop-arrow{color:#3f914e}
+    .sidebar-foot{margin-top:auto;padding:16px 27px 26px;color:#79877c;font-size:11px;line-height:1.6;border-top:1px solid var(--border)}
+    .map-wrap{position:relative;min-height:0;overflow:hidden;background:#dfe7d8}.map{width:100%;height:100%;background:linear-gradient(130deg,#d1e5d3,#e6ebdf)}.map-cover{display:none;position:absolute;inset:0;background:linear-gradient(135deg,#cfe0d1,#ebeee3);color:#38513c;align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:30px;z-index:5}.map-cover strong{font-size:20px}.map-cover p{max-width:270px;font-size:13px;line-height:1.6;margin:0}
+    .map-top{position:absolute;z-index:500;top:18px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}.map-label{pointer-events:auto;display:flex;align-items:center;gap:9px;max-width:min(100%,360px);border:1px solid #e0e7dc;border-radius:15px;padding:11px 14px;background:#fffffff2;box-shadow:0 8px 23px #1023131d;backdrop-filter:blur(10px)}.map-label i{font-style:normal;font-size:21px}.map-label b{display:block;font-size:12px}.map-label small{display:block;color:#6c8070;font-size:10px;margin-top:3px}.map-tools{display:flex;gap:7px;pointer-events:auto}.tool-btn{height:43px;width:43px;border:1px solid #dce5dc;background:#fff;border-radius:13px;display:grid;place-items:center;box-shadow:0 8px 24px #10231318;color:#214834;font-size:17px;font-weight:800}.tool-btn:hover{background:#f1f9eb}
+    .map-bottom{position:absolute;bottom:30px;left:18px;right:18px;z-index:500;pointer-events:none;display:flex;justify-content:flex-end}.next-banner{pointer-events:auto;max-width:380px;width:100%;padding:13px 15px;border:1px solid #ecf0e6;border-radius:16px;background:#fffffff5;box-shadow:0 9px 27px #0d2a1a20;display:flex;gap:12px;align-items:center}.next-icon{height:42px;width:42px;background:#e4f0d8;border-radius:13px;display:grid;place-items:center;font-size:22px;flex-shrink:0}.next-body{min-width:0;flex:1}.next-body small{font-size:10px;font-weight:800;letter-spacing:.1em;color:#789071;text-transform:uppercase}.next-body b{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.next-body span{font-size:11px;color:#698274}.next-go{border:0;background:var(--pine);color:#fff;border-radius:12px;min-height:38px;padding:0 13px;font-size:12px;font-weight:800}
+    .custom-pin{background:none;border:0}.pin-core{background:#fff;border:3px solid #244b36;box-shadow:0 4px 13px #102f2057;display:grid;place-items:center;border-radius:13px;width:37px;height:37px;font-size:13px;font-weight:900;color:#214c31;transition:all .2s}.custom-pin.is-next .pin-core{background:#1b5437;border-color:#1b5437;color:#efffdb;transform:scale(1.09)}.custom-pin.is-done .pin-core{background:#c9edaa;border-color:#3f8c59;color:#2a6e43}.custom-pin.home .pin-core{border-radius:16px;background:#b5ef7b;border-color:#092d1e;color:#143b2a;font-size:20px}.user-pulse{width:17px;height:17px;border-radius:50%;background:#2374ff;border:3px solid white;box-shadow:0 0 0 8px #1b83ff31,0 2px 12px #073b9255}
+    .modal-overlay{position:fixed;z-index:2000;inset:0;background:#051c14b6;backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;overscroll-behavior:contain}.modal-overlay.open{display:flex}.modal{background:#fffdf8;box-shadow:0 25px 100px #0006;border-radius:25px;max-width:520px;width:100%;max-height:min(90dvh,750px);overflow-y:auto;position:relative;animation:pop .24s ease both}.modal:focus{outline:none}@keyframes pop{from{opacity:0;transform:translateY(13px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+    .modal-hero{background:#123c2c;color:#fff;padding:32px 29px 28px;position:relative;overflow:hidden}.modal-hero::after{content:'✦';position:absolute;right:-25px;top:30px;color:#ffffff12;font-size:200px;line-height:1;pointer-events:none}.modal-eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#c1e89e;font-weight:900;display:flex;align-items:center;gap:8px}.modal-emoji{margin:19px 0 7px;font-size:39px}.modal h2{font-size:30px;line-height:1.07;letter-spacing:-1.1px;max-width:390px;margin:0}.modal-content{padding:24px 29px 29px}.modal-story{font-size:15px;line-height:1.68;color:#40564a;margin:0 0 19px}.say-box{border-left:4px solid #68a85a;border-radius:0 14px 14px 0;background:#edf3e5;padding:15px 17px;margin:18px 0}.say-box small{display:block;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#6e8765;font-size:10px;margin-bottom:7px}.say-box p{font-size:16px;line-height:1.4;font-weight:850;margin:0;color:#284c2f}.modal-note{font-size:12px;color:#7a756a;line-height:1.5;margin-bottom:14px}.modal-actions{display:flex;gap:9px;flex-wrap:wrap}.modal-actions a,.modal-actions button{flex:1;min-width:150px}.modal-source{font-size:11px;color:#718276;margin-top:16px}.modal-source a{text-decoration:underline}.close-modal{position:absolute;z-index:2;right:13px;top:13px;border:1px solid #ffffff3d;border-radius:999px;background:#ffffff22;color:white;width:35px;height:35px;font-size:20px;display:grid;place-items:center}
+    .toast{z-index:2600;position:fixed;bottom:20px;left:50%;max-width:min(90vw,550px);width:max-content;transform:translateX(-50%);border-radius:13px;background:#122f24;color:#fff;padding:12px 16px;font-size:12px;font-weight:700;box-shadow:0 9px 27px #0015;opacity:0;pointer-events:none;transition:opacity .3s}.toast.show{opacity:1}
+    .leaflet-container{font-family:inherit}.leaflet-control-attribution{font-size:9px !important;opacity:.85}
+    @media (max-width:900px){.layout{grid-template-columns:350px minmax(0,1fr)}.story-intro{padding:24px 20px 15px}.progress-card{margin:0 16px 17px}.button-panel{padding:0 16px 12px}.stops{padding:0 12px 20px}.section-heading{padding:10px 19px}}
+    @media (max-width:700px){.shell{display:block}.topbar{padding:12px 15px}.brand-icon{height:36px;width:36px;border-radius:11px;font-size:21px}.brand-name{font-size:16px}.brand-sub{font-size:10px}.location-label{font-size:11px;padding:8px}.layout{display:flex;flex-direction:column;height:auto;min-height:0}.map-wrap{order:0;height:49dvh;min-height:300px;flex:none}.sidebar{order:1;overflow:visible;border:0;display:block}.story-intro{padding:21px 20px 18px}.story-intro h1{font-size:30px;max-width:none}.intro-copy{font-size:12px}.map-top{top:11px;left:11px;right:11px}.map-label{padding:9px 11px;max-width:240px;border-radius:12px}.map-label b{font-size:11px}.map-label small{font-size:9px}.map-label i{font-size:18px}.map-tools{gap:6px}.tool-btn{width:38px;height:38px;border-radius:11px}.map-bottom{left:11px;right:11px;bottom:25px}.next-banner{max-width:100%;padding:10px 11px;border-radius:14px}.next-icon{width:34px;height:36px;font-size:19px}.next-go{min-height:35px}.stats{margin-top:14px}.modal-overlay{align-items:flex-end;padding:8px 8px max(8px,env(safe-area-inset-bottom))}.modal{border-radius:22px;max-height:89dvh}.modal-hero{padding:25px 23px 21px}.modal h2{font-size:27px}.modal-content{padding:20px 22px 25px}.modal-story{font-size:14px}.toast{bottom:14px}}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;scroll-behavior:auto!important;transition:none!important}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><div class="brand-icon" aria-hidden="true">✦</div><div><div class="brand-name">Dublin, Decoded.</div><div class="brand-sub">Your walking story</div></div></div>
+    <div class="location-label"><span class="status-dot" id="gps-dot"></span><span id="gps-state">GPS off</span></div>
+  </header>
+  <main class="layout">
+    <aside class="sidebar" aria-label="Walking tour guide">
+      <section class="story-intro">
+        <div class="eyebrow">☘️ &nbsp;Self-guided city adventure</div>
+        <h1>Eight stops.<br><em>Eight secrets.</em></h1>
+        <p class="intro-copy">Start at Generator Dublin in Smithfield. Follow the green route, and unlock a great story as you arrive at each landmark.</p>
+        <div class="stats"><div class="pill">🚶 Walking tour</div><div class="pill">📍 8 fact stops</div><div class="pill" id="distance-pill">↗ Calculating route</div></div>
+      </section>
+      <section class="progress-card" aria-label="Tour progress"><div class="progress-head"><b>Stories collected</b><small id="progress-text">0 of 8</small></div><div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div></section>
+      <div class="button-panel">
+        <button class="primary full" id="gps-toggle">◎ &nbsp;Start live GPS tour</button>
+        <button class="outline" id="fit-route">▧ &nbsp;Show route</button>
+        <button class="outline" id="navigate-next">↗ &nbsp;Next stop in Maps</button>
+      </div>
+      <div class="gps-help" id="gps-help" role="status">GPS facts pop up within about 80 metres while the app is open. Tap any stop to preview its story.</div>
+      <div class="section-heading"><h2>On your route</h2><button id="reset-progress" type="button">Reset progress</button></div>
+      <div class="stops" id="stops"></div>
+      <div class="sidebar-foot">Made for exploring on foot. Pay attention to traffic and use street signs. Map tiles and walking routes require internet; GPS requires location permission. Popups work while this page is open, not when your phone is locked.<br><br><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">Map data © OpenStreetMap contributors</a></div>
+    </aside>
+    <section class="map-wrap" aria-label="Map of Dublin walking tour">
+      <div id="map" class="map" role="application" aria-label="Interactive map with eight Dublin facts stops"></div>
+      <div class="map-cover" id="map-cover"><strong>Map unavailable</strong><p>Connect to the internet to load the map. You can still tap the story stops and use the Google Maps directions button.</p></div>
+      <div class="map-top"><div class="map-label"><i>🗺️</i><div><b>Smithfield → Trinity College</b><small id="route-status">Loading walking route…</small></div></div><div class="map-tools"><button class="tool-btn" id="center-me" title="Center on my GPS position" aria-label="Center on my location">◎</button><button class="tool-btn" id="fit-map" title="Show complete route" aria-label="Show complete route">⛶</button></div></div>
+      <div class="map-bottom"><div class="next-banner"><div class="next-icon" id="next-emoji">🏭</div><div class="next-body"><small id="next-kicker">Your first stop</small><b id="next-title">Jameson Chimney</b><span id="next-distance">Right by your hostel</span></div><button class="next-go" id="next-story" aria-label="Preview next stop fact">Fact ↗</button></div></div>
+    </section>
+  </main>
+</div>
+<div class="modal-overlay" id="modal-overlay" aria-hidden="true">
+  <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
+    <div class="modal-hero"><button class="close-modal" id="close-modal" aria-label="Close story">×</button><div class="modal-eyebrow" id="modal-eyebrow">✦ Story 1 of 8</div><div class="modal-emoji" id="modal-emoji">🏭</div><h2 id="modal-title"></h2></div>
+    <div class="modal-content"><p class="modal-story" id="modal-story"></p><div class="say-box"><small>Say this to your friends</small><p id="modal-quote"></p></div><div class="modal-note" id="modal-note" hidden></div><div class="modal-actions"><button class="primary" id="mark-visited">✓ &nbsp;Mark as visited</button><a class="soft" id="modal-directions" target="_blank" rel="noopener noreferrer">↗ Walking directions</a></div><div class="modal-source"><a id="modal-source" target="_blank" rel="noopener noreferrer">Fact source ↗</a></div></div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script>
+(() => {
+  'use strict';
+  const START={name:'Generator Dublin',lat:53.34839,lng:-6.27768};
+  const STOPS=[
+    {id:'chimney',name:'Jameson Chimney',hint:'Right outside Generator',emoji:'🏭',lat:53.34849,lng:-6.27784,
+     headline:'This tower used to make whiskey.',story:'The brick chimney beside your hostel was built in 1895 for the Jameson Distillery. It is roughly 60 metres tall and was later adapted into a viewing tower. Today it is an unmistakable reminder that Smithfield was once packed with whiskey-making industry.',
+     quote:'“Our hostel comes with its own 130-year-old whiskey chimney.”',note:'The viewing tower is not currently open; this is an outside-only stop.',source:'Buildings of Ireland',url:'https://www.buildingsofireland.ie/buildings-search/building/50070323/john-jameson-and-son-smithfield-dublin-7-dublin'},
+    {id:'courts',name:'Four Courts',hint:'The building with the great dome',emoji:'📜',lat:53.34584,lng:-6.27349,
+     headline:'Ireland lost centuries of records here.',story:'During the Irish Civil War in June 1922, an explosion and fire engulfed the Public Record Office at the Four Courts complex. Countless irreplaceable documents and records went up in flames, creating gaps in family and national history that historians are still piecing together.',
+     quote:'“A fire in this building erased centuries of Irish history.”',note:'Your map pin is on the public riverside pavement, with a good view of the dome.',source:'National Archives of Ireland',url:'https://nationalarchives.ie/engage-and-learn/exhibitions-and-loans/public-record-office-of-ireland-the-story-of-a-building/'},
+    {id:'christ',name:'Christ Church Cathedral',hint:'A very strange pair of residents',emoji:'🐈',lat:53.34341,lng:-6.27120,
+     headline:'There is a mummified cat and rat inside.',story:'Among the treasures in Christ Church Cathedral’s historic crypt are a cat and a rat that became naturally mummified. The cathedral itself traces its roots back nearly a thousand years to Viking Dublin. And despite Ireland’s Catholic image, this cathedral belongs to the Anglican Church of Ireland.',
+     quote:'“Dublin has a cathedral where the famous attractions include a mummified cat and rat.”',note:'The cat and rat are inside the crypt; seeing them requires admission during opening hours.',source:'Christ Church Cathedral',url:'https://christchurchcathedral.ie/visiting/'},
+    {id:'castle',name:'Dublin Castle',hint:'The surprising meaning of Dublin',emoji:'🏰',lat:53.34329,lng:-6.26753,
+     headline:'Dublin means “black pool.”',story:'The city’s name comes from the Irish Dubh Linn, meaning “black pool.” A dark tidal pool once lay near what is now Dublin Castle. The Vikings developed a settlement around the area, and the name survived for more than a thousand years.',
+     quote:'“Dublin is basically named after an old black pool of water.”',note:'Dublin Castle is closed to public visits until 31 December 2026. Enjoy this stop from the Dame Street/Cork Hill approach.',source:'Visit Dublin',url:'https://www.visitdublin.com/dublin-castle'},
+    {id:'temple',name:'Temple Bar Square',hint:'Saved from a very different future',emoji:'🚌',lat:53.34552,lng:-6.26312,
+     headline:'This neighbourhood was nearly a bus station.',story:'Back in the 1980s, much of Temple Bar was earmarked for a massive city-centre bus station. Artists, musicians and campaigners helped save the area, and instead it evolved into the cobbled cultural and nightlife district we know today.',
+     quote:'“We could be standing in a bus depot instead of Dublin’s most famous nightlife district.”',source:'Irish Archives Resource',url:'https://iar.ie/archive/dublin-city-archaeological-archivetemple-bar-redevelopment-collection/'},
+    {id:'bridge',name:'Ha’penny Bridge',hint:'The bridge that charged admission',emoji:'🌉',lat:53.34633,lng:-6.26309,
+     headline:'You once had to pay to cross this bridge.',story:'When the cast-iron bridge opened in 1816, crossing the River Liffey cost half a penny. It was officially the Wellington Bridge, but the toll gave it the nickname everyone still uses. The toll continued until the early twentieth century.',
+     quote:'“You owe me half a penny for crossing this bridge.”',source:'Visit Dublin',url:'https://www.visitdublin.com/ha-penny-bridge'},
+    {id:'gpo',name:'General Post Office',hint:'Revolution among the letters',emoji:'✉️',lat:53.34935,lng:-6.26051,
+     headline:'A post office became a revolutionary headquarters.',story:'During the Easter Rising on 24 April 1916, Irish rebels seized the GPO and made it their headquarters. Patrick Pearse proclaimed an Irish Republic here. The GPO was badly damaged by the fighting and eventually reopened in 1929.',
+     quote:'“The Irish Republic was proclaimed outside a post office.”',source:'Government of Ireland',url:'https://www.gov.ie/en/department-of-the-taoiseach/publications/the-1916-rising/'},
+    {id:'trinity',name:'Trinity College',hint:'A famous book with a mysterious birthplace',emoji:'📖',lat:53.34439,lng:-6.25792,
+     headline:'Dublin’s famous book may have begun in Scotland.',story:'The richly illustrated Book of Kells is about 1,200 years old. Its exact birthplace is debated: one leading theory is that monks began it on the island of Iona, off Scotland, before it reached Kells in Ireland. Today it is preserved at Trinity College.',
+     quote:'“The Book of Kells may not have been made in Kells — or even in Ireland.”',note:'This stop is at Trinity’s public Front Gate on College Green; entry to the Book of Kells exhibition is separate.',source:'Trinity College Dublin',url:'https://www.visittrinity.ie/what-is-the-book-of-kells/'}
+  ];
+  const $=id=>document.getElementById(id);
+  let map=null,markers=[],routeLayer=null,roughRoute=null,position=null,userDot=null,userAccuracy=null,watchId=null;
+  let currentStory=-1,routeKm=null,firstFix=true,lastAutoAt=0,lastAutoIndex=-1,previousFocused=null,toaster=null;
+  let visited=new Set();
+  try { const saved=JSON.parse(localStorage.getItem('dublinDecodedSeenV1')||'[]'); if(Array.isArray(saved)) visited=new Set(saved.filter(x=>STOPS.some(p=>p.id===x))); } catch(e) {}
+  function save(){try{localStorage.setItem('dublinDecodedSeenV1',JSON.stringify([...visited]));}catch(e){}}
+  function meters(a,b){const R=6371000,rad=Math.PI/180,dLat=(b.lat-a.lat)*rad,dLng=(b.lng-a.lng)*rad;
+    const x=Math.sin(dLat/2)**2+Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dLng/2)**2;return 2*R*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+  const approximateKm=[START,...STOPS].slice(1).reduce((n,p,i)=>n+meters([START,...STOPS][i],p),0)/1000;
+  function formatDistance(d){if(d<1000)return `${Math.round(d/10)*10} m away`;return `${(d/1000).toFixed(1)} km away`;}
+  function nextIndex(){const i=STOPS.findIndex(p=>!visited.has(p.id));return i<0 ? 7:i;}
+  function toast(msg){const el=$('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toaster);toaster=setTimeout(()=>el.classList.remove('show'),4500);}
+  function directionsTo(p){return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.lat+','+p.lng)}&travelmode=walking&dir_action=navigate`;}
+  function updateUI(){
+    const done=visited.size,upcoming=STOPS[nextIndex()];$('progress-text').textContent=`${done} of ${STOPS.length}`;$('progress-bar').style.width=(done/STOPS.length*100)+'%';
+    $('next-emoji').textContent=done===STOPS.length?'🎉':upcoming.emoji;
+    $('next-kicker').textContent=done===STOPS.length?'Tour complete!':`Next stop • ${nextIndex()+1} of 8`;
+    $('next-title').textContent=done===STOPS.length?'All eight stories collected':upcoming.name;
+    $('next-distance').textContent=done===STOPS.length?'You explored Dublin like a local.':(position?formatDistance(meters(position,upcoming)):upcoming.hint);
+    $('next-story').textContent=done===STOPS.length?'Replay ↗':'Fact ↗';
+    $('distance-pill').textContent=routeKm?`↗ ${routeKm.toFixed(1)} km walking`:`↗ ≈${(approximateKm*1.3).toFixed(1)} km walk`;
+    const html=STOPS.map((p,i)=>{
+      const did=visited.has(p.id),next=!did&&i===nextIndex();return `<button type="button" class="stop ${did?'visited':''} ${next?'next':''}" data-i="${i}" aria-label="Open story ${i+1}, ${p.name}${did?', visited':''}"><span class="stop-num">${did?'✓':i+1}</span><span class="stop-text"><span class="stop-title">${p.name}</span><span class="stop-subtitle">${did?'Story collected':position?formatDistance(meters(position,p)):p.hint}</span></span><span class="stop-arrow">↗</span></button>`;}).join('');
+    $('stops').innerHTML=html;
+    $('stops').querySelectorAll('.stop').forEach(node=>node.addEventListener('click',()=>openStory(Number(node.dataset.i),false)));
+    markers.forEach((m,i)=>{m.setIcon(pinIcon(i));});
+  }
+  function pinIcon(i){let p=STOPS[i],did=visited.has(p.id),isNext=!did&&i===nextIndex();return L.divIcon({className:`custom-pin ${did?'is-done':''} ${isNext?'is-next':''}`,html:`<div class="pin-core">${did?'✓':i+1}</div>`,iconSize:[37,37],iconAnchor:[18,18]});}
+  function fitRoute(){if(!map)return;const pts=[START,...STOPS].map(p=>[p.lat,p.lng]);const bounds=L.latLngBounds(pts);map.fitBounds(bounds.pad(.11),{animate:true,maxZoom:15,padding:[34,34]});}
+  function initMap(){if(!window.L){$('map-cover').style.display='flex';$('route-status').textContent='Map offline — stories still work';$('distance-pill').textContent='↗ About 4 km';return;}
+    map=L.map('map',{zoomControl:false,preferCanvas:true}).setView([53.3464,-6.2691],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',maxZoom:19}).addTo(map);
+    // Pinch or wheel to zoom; no floating zoom buttons to cover the next-stop card.
+    const home=L.marker([START.lat,START.lng],{icon:L.divIcon({className:'custom-pin home',html:'<div class="pin-core">⌂</div>',iconSize:[37,37],iconAnchor:[18,18]})}).addTo(map);
+    home.bindTooltip('Start: Generator Dublin',{direction:'top'});
+    STOPS.forEach((p,i)=>{const m=L.marker([p.lat,p.lng],{icon:pinIcon(i),title:p.name}).addTo(map);m.bindTooltip(`${i+1}. ${p.name}`,{direction:'top',offset:[0,-12]});m.on('click',()=>openStory(i,false));markers.push(m);});
+    roughRoute=L.polyline([START,...STOPS].map(p=>[p.lat,p.lng]),{color:'#1a6f43',weight:4,opacity:.65,dashArray:'6,9',lineCap:'round'}).addTo(map);
+    fitRoute();setTimeout(()=>map.invalidateSize(),350);loadWalkingRoute();
+  }
+  async function loadWalkingRoute(){if(!map)return;const coords=[START,...STOPS].map(p=>`${p.lng},${p.lat}`).join(';');
+    const url=`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`;
+    const controller=new AbortController(),t=setTimeout(()=>controller.abort(),14000);
+    try{const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw new Error('route service unavailable');const data=await response.json();
+      if(data.code!=='Ok'||!data.routes||!data.routes[0]||!data.routes[0].geometry)throw new Error('route not found');
+      routeLayer=L.geoJSON(data.routes[0].geometry,{style:{color:'#176939',weight:6,opacity:.94,lineJoin:'round',lineCap:'round'}}).addTo(map);
+      if(roughRoute){map.removeLayer(roughRoute);roughRoute=null;}
+      routeKm=data.routes[0].distance/1000;$('route-status').textContent=`${routeKm.toFixed(1)} km • walking route`;
+    }catch(e){$('route-status').textContent='Approximate path • use Maps for turns';if(roughRoute)roughRoute.setStyle({color:'#568f61',opacity:.75,dashArray:'5,9'});}
+    finally{clearTimeout(t);updateUI();}
+  }
+  function updateGPSStatus(text,active=false){$('gps-state').textContent=text;$('gps-dot').classList.toggle('live',active);$('gps-toggle').textContent=active?'◉  Stop GPS tracking':'◎  Start live GPS tour';}
+  function onLocation(pos){position={lat:pos.coords.latitude,lng:pos.coords.longitude};let accuracy=pos.coords.accuracy;updateGPSStatus(`GPS live · ±${Math.round(accuracy)}m`,true);
+    $('gps-help').textContent=accuracy>110?'GPS is connected but not precise enough to trigger facts yet. Try stepping outdoors.':'GPS tracking is on. A new fact appears automatically when you get close to a landmark (keep this page open).';
+    if(map){if(!userDot){userDot=L.marker([position.lat,position.lng],{zIndexOffset:1000,icon:L.divIcon({className:'',html:'<div class="user-pulse"></div>',iconSize:[17,17],iconAnchor:[8,8]})}).addTo(map).bindTooltip('You are here');
+       userAccuracy=L.circle([position.lat,position.lng],{radius:accuracy,color:'#2679db',weight:1,fillColor:'#3183f2',fillOpacity:.08}).addTo(map);}else{userDot.setLatLng([position.lat,position.lng]);userAccuracy.setLatLng([position.lat,position.lng]).setRadius(accuracy);}
+       if(firstFix){map.panTo([position.lat,position.lng],{animate:true});firstFix=false;}}
+    updateUI();
+    if(accuracy>110||$('modal-overlay').classList.contains('open')||document.visibilityState!=='visible'||Date.now()-lastAutoAt<7000)return;
+    let candidates=STOPS.map((p,i)=>({i,d:meters(position,p)})).filter(c=>!visited.has(STOPS[c.i].id)&&c.d<=Math.max(75,Math.min(100,accuracy+50))).sort((a,b)=>a.d-b.d);
+    if(candidates.length){let i=candidates[0].i;if(i!==lastAutoIndex){lastAutoIndex=i;lastAutoAt=Date.now();openStory(i,true);if(navigator.vibrate)try{navigator.vibrate([100,80,100]);}catch(e){}}}
+  }
+  function onLocationError(err){if(watchId!==null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}}watchId=null;
+    updateGPSStatus('GPS unavailable',false);let text=err.code===1?'Location access was denied. Allow it in your phone/browser settings, then try again.':err.code===2?'Your phone cannot get a GPS fix right now. Try outdoors.':'Location request timed out. Try again outside.';
+    $('gps-help').textContent=text;toast(text);
+  }
+  function toggleGPS(){if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;updateGPSStatus('GPS paused',false);$('gps-help').textContent='Tracking stopped. You can still preview the facts by tapping the numbered markers.';return;}
+    if(!navigator.geolocation){toast('This browser does not support GPS. Tap a stop to explore manually.');return;}
+    if(!window.isSecureContext){toast('Live GPS needs a secure HTTPS website. The map and manual facts still work.');$('gps-help').textContent='Live GPS requires HTTPS. Host the included folder online, then allow location permission.';return;}
+    firstFix=true;updateGPSStatus('Locating…',true);$('gps-help').textContent='Requesting your phone’s location…';
+    try{watchId=navigator.geolocation.watchPosition(onLocation,onLocationError,{enableHighAccuracy:true,timeout:20000,maximumAge:5000});}catch(e){updateGPSStatus('GPS unavailable');toast('Unable to start GPS on this browser.');}
+  }
+  function visit(i){visited.add(STOPS[i].id);save();updateUI();}
+  function openStory(i,fromGPS){const p=STOPS[i],overlay=$('modal-overlay');currentStory=i;previousFocused=document.activeElement;
+    $('modal-eyebrow').textContent=`✦ ${fromGPS?'You made it! • ':''}Story ${i+1} of 8`;$('modal-emoji').textContent=p.emoji;$('modal-title').textContent=p.headline;$('modal-story').textContent=p.story;$('modal-quote').textContent=p.quote;
+    $('modal-note').textContent=p.note||'';$('modal-note').hidden=!p.note;
+    $('modal-directions').href=directionsTo(p);$('modal-source').href=p.url;$('modal-source').textContent=`Source: ${p.source} ↗`;
+    overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+    if(fromGPS){visit(i);toast(`📍 Arrived at ${p.name} — story unlocked!`);}else{$('mark-visited').textContent=visited.has(p.id)?'✓  Collected — close':'✓  Mark as visited';}
+    if(fromGPS)$('mark-visited').textContent='✓  Collected — close';
+    $('close-modal').focus({preventScroll:true});
+  }
+  function closeStory(){if(!$('modal-overlay').classList.contains('open'))return;$('modal-overlay').classList.remove('open');$('modal-overlay').setAttribute('aria-hidden','true');document.body.style.overflow='';currentStory=-1;
+    if(previousFocused&&previousFocused.isConnected)previousFocused.focus({preventScroll:true});
+  }
+  function markVisited(){if(currentStory<0)return;if(!visited.has(STOPS[currentStory].id)){visit(currentStory);toast('Story collected!');}closeStory();}
+  $('gps-toggle').addEventListener('click',toggleGPS);$('fit-route').addEventListener('click',fitRoute);$('fit-map').addEventListener('click',fitRoute);
+  $('center-me').addEventListener('click',()=>{if(map&&position)map.setView([position.lat,position.lng],17);else toast('Start GPS tracking to locate yourself on the map.');});
+  $('navigate-next').addEventListener('click',()=>{window.location.href=directionsTo(STOPS[nextIndex()]);});
+  $('next-story').addEventListener('click',()=>openStory(nextIndex(),false));
+  $('close-modal').addEventListener('click',closeStory);$('modal-overlay').addEventListener('click',e=>{if(e.target===$('modal-overlay'))closeStory();});
+  $('mark-visited').addEventListener('click',markVisited);
+  window.addEventListener('keydown',e=>{if(e.key==='Escape')closeStory();});
+  $('reset-progress').addEventListener('click',()=>{if(confirm('Clear your collected stories and restart the walk?')){visited.clear();save();lastAutoIndex=-1;updateUI();toast('Your tour is ready to start again.');}});
+  updateUI();window.addEventListener('load',initMap);
+  // Bundled Android app: no service worker required.
+})();
+</script>
+<script>
+document.addEventListener('click', function(event) {
+  const anchor = event.target.closest('a[href]');
+  if (anchor && anchor.target === '_blank') anchor.target = '_self';
+}, true);
+</script>
+</body>
+</html>
